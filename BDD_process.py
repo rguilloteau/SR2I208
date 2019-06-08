@@ -28,7 +28,7 @@ fini = Value(c_int, 0)
 batchs = Queue(100)
 verrou = Lock()
 
-def create_batch(k, N):
+def create_batch(k, N, batchs):
 
 
     #If there are not enough data (smaller than N) send only one batch
@@ -77,27 +77,24 @@ def create_batch(k, N):
 
 
 
-def batchCreater(fini, EXEMPLE, N):
+def batchCreater(fini, EXEMPLE, N, batchs):
     fini.value = 0
     if EXEMPLE :
-        create_batch(1,100)
+        create_batch(1,100, batchs)
     else :
         index = [i for i in range(len(list_recv))]
         shuffle(index)
         for i in index:
-            create_batch(i,N)
+            create_batch(i,N, batchs)
     fini.value = 1
-    print("Coucou")
-    #exit(1)
+    exit(1)
 
 
 
-def batchWriter(fini):
-    print("Coucou2")
+def batchWriter(fini, batchs):
     fx = open("batches_x", "w")
     fy = open("batches_y", "w")
-    while (fini.value!=0) or not batchs.empty():
-        print(fini.value)
+    while (fini.value==0) or not batchs.empty():
         with verrou:
             if batchs.empty():
                 continue
@@ -122,8 +119,8 @@ def batchWriter(fini):
 
 EXEMPLE = True
 N=500
-creater = Process(target=batchCreater, args=(fini, EXEMPLE, N))
-writer = Process(target=batchWriter, args=(fini,))
+creater = Process(target=batchCreater, args=(fini, EXEMPLE, N, batchs))
+writer = Process(target=batchWriter, args=(fini,batchs))
 
 creater.start()
 writer.start()

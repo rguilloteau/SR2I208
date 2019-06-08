@@ -6,11 +6,8 @@ import time
 import pandas as pd
 import numpy as np
 from random import shuffle
-from multiprocessing import Lock
-from multiprocessing import Process
-from multiprocessing.sharedctypes import Value
-from multiprocessing import Queue
-from ctypes import c_int
+from threading import Thread, RLock
+from queue import Queue
 
 L = [f for f in os.listdir('./Dataset.csv') if f[:6] == 'attack']
 frames=[]
@@ -23,13 +20,15 @@ database.sort_values(['BSM'])
 database=database.dropna()
 list_recv = [database[database['Identifiant du destinataire'] == x] for x in database['Identifiant du destinataire'].unique()]
 
-fini = Value(c_int, 0)
+global N
+N=500
+EXEMPLE = True
+
 
 batchs = Queue(100)
-verrou = Lock()
+verrou = RLock()
 
-def create_batch(k, N, batchs):
-
+def create_batch(k):
 
     #If there are not enough data (smaller than N) send only one batch
     if len(list_recv[k])<=N:
@@ -75,52 +74,60 @@ def create_batch(k, N, batchs):
                     tmp_x.append(list_recv[k].iloc[j, 1:-1])
 
 
+class BatchCreater(Thread):
+    """Va générer les batchs glissants"""
 
+    def __init__(self):
+        Thread.__init__(self)
 
-def batchCreater(fini, EXEMPLE, N, batchs):
-    fini.value = 0
-    if EXEMPLE :
-        create_batch(1,100, batchs)
-    else :
-        index = [i for i in range(len(list_recv))]
-        shuffle(index)
-        for i in index:
-            create_batch(i,N, batchs)
-    fini.value = 1
-    exit(1)
+    def run(self):
+        global fini
+        global N
+        fini = False
+        if EXEMPLE :
+            N=100
+            create_batch(1)
+        else :
+            index = [i for i in range(len(list_recv))]
+            shuffle(index)
+            for i in index:
+                create_batch(i)
+        fini = True
 
+class BatchWriter(Thread):
+    """Va écrire les batchs en mémoire"""
 
+    def __init__(self):
+        Thread.__init__(self)
 
-def batchWriter(fini, batchs):
-    fx = open("batches_x", "w")
-    fy = open("batches_y", "w")
-    while (fini.value==0) or not batchs.empty():
-        with verrou:
-            if batchs.empty():
-                continue
-            else:
-                batch_x, batch_y = batchs.get(block=True)
-        for i in range(len(batch_x)):
-            tmp = batch_x[i].to_numpy()
-            fx.write(str(tmp[1])+" ")
-            for k in range(3,len(tmp)-1):
-                fx.write(str(tmp[k])+" ")
+    def run(self):
+        global fini
+        fx = open("batches_x", "w")
+        fy = open("batches_y", "w")
+        while not fini or not batchs.empty():
+            with verrou:
+                if batchs.empty():
+                    continue
+                else:
+                    batch_x, batch_y = batchs.get(block=True)
+            for i in range(len(batch_x)):
+                tmp = batch_x[i].to_numpy()
+                fx.write(str(tmp[1])+" ")
+                for k in range(3,len(tmp)-1):
+                    fx.write(str(tmp[k])+" ")
+                fx.write("\n")
+                fy.write(str(batch_y[i])+"\n")
+
+            time.sleep(0)
+
             fx.write("\n")
-            fy.write(str(batch_y[i])+"\n")
+            fy.write("\n")
 
-        time.sleep(0)
+        fx.close()
+        fy.close()
 
-        fx.write("\n")
-        fy.write("\n")
-
-    fx.close()
-    fy.close()
-    exit(1)
-
-EXEMPLE = True
-N=500
-creater = Process(target=batchCreater, args=(fini, EXEMPLE, N, batchs))
-writer = Process(target=batchWriter, args=(fini,batchs))
+creater = BatchCreater()
+writer = BatchWriter()
 
 creater.start()
 writer.start()
