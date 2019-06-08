@@ -66,8 +66,8 @@ def create_batch(k):
 
         for j in range (i,len(list_recv[k])):
             if len(tmp_x)==N:
-                batches_x.append((tmp_x+[list_recv[k].iloc[j, 1:-1]]).copy())
-                batches_y.append((tmp_y+[list_recv[k].iloc[j, -1]]).copy())
+                batches_x.append((tmp_x+[list_recv[k].iloc[j, 1:-1]]))
+                batches_y.append((tmp_y+[list_recv[k].iloc[j, -1]]))
                 tmp_x.pop(0)
 
             if len(tmp_x)<N:

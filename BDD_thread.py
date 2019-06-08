@@ -20,6 +20,7 @@ database.sort_values(['BSM'])
 database=database.dropna()
 list_recv = [database[database['Identifiant du destinataire'] == x] for x in database['Identifiant du destinataire'].unique()]
 
+global N
 N=500
 EXEMPLE = True
 
@@ -60,9 +61,7 @@ def create_batch(k):
 
 
         if i==len(list_recv[k])-1:
-            tmp_x.append(list_recv[k].iloc[i, 1:-1])
-            tmp_y.append(int(list_recv[k].iloc[i, -1]))
-            batchs.put([tmp_x,tmp_y], block=True)
+            batchs.put([tmp_x+[list_recv[k].iloc[i, 1:-1]], int(tmp_y+[list_recv[k].iloc[i, -1]])])
 
 
         for j in range (i,len(list_recv[k])):
@@ -83,6 +82,7 @@ class BatchCreater(Thread):
 
     def run(self):
         global fini
+        global N
         fini = False
         if EXEMPLE :
             N=100
