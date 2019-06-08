@@ -38,11 +38,11 @@ def create_batch(k):
 
         for i in range(len(list_recv[k])-1):
             if list_recv[k].iloc[i,-1]==0:
-                tmp_x.append(list_recv[k].iloc[i,1:-1])
+                tmp_x.append(list_recv[k].iloc[i,0])
                 tmp_y.append(0)
 
         tmp_y.append(int(list_recv[k].iloc[-1,-1]))
-        tmp_x.append(list_recv[k].iloc[-1, 1:-1])
+        tmp_x.append(list_recv[k].iloc[-1, 0])
 
         batchs.put([tmp_x,tmp_y], block=True)
 
@@ -54,24 +54,24 @@ def create_batch(k):
 
         while(compteur<N and i<(len(list_recv[k])-1)):
             if list_recv[k].iloc[i,-1]==0:
-                tmp_x.append(list_recv[k].iloc[i,1:-1])
+                tmp_x.append(list_recv[k].iloc[i,0])
                 tmp_y.append(0)
                 compteur+=1
             i+=1
 
 
         if i==len(list_recv[k])-1:
-            batchs.put([tmp_x+[list_recv[k].iloc[i, 1:-1]], int(tmp_y+[list_recv[k].iloc[i, -1]])])
+            batchs.put([tmp_x+[list_recv[k].iloc[i, 0]], int(tmp_y+[list_recv[k].iloc[i, -1]])])
 
 
         for j in range (i,len(list_recv[k])):
             if len(tmp_x)==N:
-                batchs.put([tmp_x+[list_recv[k].iloc[j, 1:-1]],tmp_y+[int(list_recv[k].iloc[j, -1])]], block=True)
+                batchs.put([tmp_x+[list_recv[k].iloc[j, 0]],tmp_y+[int(list_recv[k].iloc[j, -1])]], block=True)
                 tmp_x.pop(0)
 
             if len(tmp_x)<N:
                 if list_recv[k].iloc[j,-1]==0:
-                    tmp_x.append(list_recv[k].iloc[j, 1:-1])
+                    tmp_x.append(list_recv[k].iloc[j, 0])
 
 
 class BatchCreater(Thread):
@@ -111,12 +111,9 @@ class BatchWriter(Thread):
                 else:
                     batch_x, batch_y = batchs.get(block=True)
             for i in range(len(batch_x)):
-                tmp = batch_x[i].to_numpy()
-                fx.write(str(tmp[1])+" ")
-                for k in range(3,len(tmp)-1):
-                    fx.write(str(tmp[k])+" ")
-                fx.write("\n")
-                fy.write(str(batch_y[i])+"\n")
+                fx.write(str(int(batch_x[i])))
+                fx.write(" ")
+                fy.write(str(batch_y[i])+" ")
 
             time.sleep(0)
 
