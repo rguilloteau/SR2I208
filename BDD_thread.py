@@ -9,6 +9,8 @@ from random import shuffle
 from threading import Thread, RLock
 from queue import Queue
 
+tmp = int(input("Exemple ? (0 pour non, 1 pour oui) : "))
+
 L = [f for f in os.listdir('./Dataset.csv') if f[:6] == 'attack']
 frames=[]
 for el in L :
@@ -22,7 +24,8 @@ list_recv = [database[database['Identifiant du destinataire'] == x] for x in dat
 
 global N
 N=500
-EXEMPLE = False
+
+EXEMPLE = (tmp==1)
 
 
 batchs = Queue(100)
@@ -102,26 +105,43 @@ class BatchWriter(Thread):
 
     def run(self):
         global fini
-        fx = open("batches_x", "w")
-        fy = open("batches_y", "w")
+        compteur={0:0, 1:0, 2:0, 4:0, 8:0, 16:0}
+        tx = open("test_x", "w")
+        ty = open("test_y", "w")
+        vx = open("validation_x", "w")
+        vy = open("validation_y", "w")
         while not fini or not batchs.empty():
             with verrou:
                 if batchs.empty():
                     continue
                 else:
                     batch_x, batch_y = batchs.get(block=True)
-            for i in range(len(batch_x)):
-                fx.write(str(int(batch_x[i])))
-                fx.write(" ")
-                fy.write(str(batch_y[i])+" ")
+            print(batch_y[-1],compteur[batch_y[-1]])
+            if (compteur[batch_y[-1]]!=0):
+                for i in range(len(batch_x)):
+                    tx.write(str(batch_x[i])+" ")
+                    ty.write(str(batch_y[i])+" ")
+
+                tx.write("\n")
+                ty.write("\n")
+
+            else:
+                for i in range(len(batch_x)):
+                    vx.write(str(batch_x[i])+" ")
+                    vy.write(str(batch_y[i])+" ")
+
+                vx.write("\n")
+                vy.write("\n")
+
+            compteur[batch_y[-1]] = (compteur[batch_y[-1]]+1)%5
 
             time.sleep(0)
 
-            fx.write("\n")
-            fy.write("\n")
 
-        fx.close()
-        fy.close()
+        tx.close()
+        ty.close()
+        vx.close()
+        vy.close()
 
 creater = BatchCreater()
 writer = BatchWriter()
