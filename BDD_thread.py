@@ -116,7 +116,6 @@ class BatchWriter(Thread):
                     continue
                 else:
                     batch_x, batch_y = batchs.get(block=True)
-            print(batch_y[-1],compteur[batch_y[-1]])
             if (compteur[batch_y[-1]]!=0):
                 for i in range(len(batch_x)):
                     tx.write(str(batch_x[i])+" ")
