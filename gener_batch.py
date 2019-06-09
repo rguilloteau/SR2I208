@@ -47,7 +47,7 @@ def entrainement(file_name):
     f = open(file_name)
     l=[line for _,line in enumerate(f)]
     f.close()
-    #random.shuffle(l)
+    random.shuffle(l)
     for line in l:
         tmp = visit_line(line)
         fit(tmp)
