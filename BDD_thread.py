@@ -22,7 +22,7 @@ list_recv = [database[database['Identifiant du destinataire'] == x] for x in dat
 
 global N
 N=500
-EXEMPLE = True
+EXEMPLE = False
 
 
 batchs = Queue(100)
@@ -61,7 +61,7 @@ def create_batch(k):
 
 
         if i==len(list_recv[k])-1:
-            batchs.put([tmp_x+[list_recv[k].iloc[i, 0]], int(tmp_y+[list_recv[k].iloc[i, -1]])])
+            batchs.put([tmp_x+[list_recv[k].iloc[i, 0]], tmp_y+[int(list_recv[k].iloc[i, -1])]])
 
 
         for j in range (i,len(list_recv[k])):
