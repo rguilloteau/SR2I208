@@ -19,6 +19,8 @@ for el in L :
 
 database = pd.concat(frames)
 
+database.iloc[[i for i in range(len(database))],0]= [i for i in range(len(database))]
+
 database.sort_values(['BSM'])
 database=database.dropna()
 list_recv = [database[database['Identifiant du destinataire'] == x] for x in database['Identifiant du destinataire'].unique()]

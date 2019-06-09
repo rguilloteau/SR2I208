@@ -18,7 +18,9 @@ for el in L :
 
 database = pd.concat(frames)
 
-database.sort_values(['BSM'])
+database.iloc[[i for i in range(len(database))],0]= [i for i in range(len(database))]
+
+database = database.sort_values(['BSM'])
 database=database.dropna()
 list_recv = [database[database['Identifiant du destinataire'] == x] for x in database['Identifiant du destinataire'].unique()]
 
@@ -37,44 +39,39 @@ def create_batch(k):
     if len(list_recv[k])<=N:
 
         tmp_x=[]
-        tmp_y=[]
 
         for i in range(len(list_recv[k])-1):
             if list_recv[k].iloc[i,-1]==0:
-                tmp_x.append(list_recv[k].iloc[i,0])
-                tmp_y.append(0)
+                tmp_x.append(int(list_recv[k].iloc[i,0]))
 
-        tmp_y.append(int(list_recv[k].iloc[-1,-1]))
         tmp_x.append(list_recv[k].iloc[-1, 0])
 
-        batchs.put([tmp_x,tmp_y], block=True)
+        batchs.put([tmp_x,int(list_recv[k].iloc[-1,-1])], block=True)
 
     else:
         compteur = 0
         i = 0
         tmp_x=[]
-        tmp_y=[]
 
         while(compteur<N and i<(len(list_recv[k])-1)):
             if list_recv[k].iloc[i,-1]==0:
-                tmp_x.append(list_recv[k].iloc[i,0])
-                tmp_y.append(0)
+                tmp_x.append(int(list_recv[k].iloc[i,0]))
                 compteur+=1
             i+=1
 
 
-        if i==len(list_recv[k])-1:
-            batchs.put([tmp_x+[list_recv[k].iloc[i, 0]], tmp_y+[int(list_recv[k].iloc[i, -1])]])
+        if i==(len(list_recv[k])-1):
+            batchs.put([tmp_x+[int(list_recv[k].iloc[i, 0])], int(list_recv[k].iloc[i, -1])])
 
+        else:
+            for j in range (i,len(list_recv[k])):
+                if len(tmp_x)==N:
+                    batchs.put([tmp_x+[int(list_recv[k].iloc[j, 0])],int(list_recv[k].iloc[j, -1])], block=True)
+                    tmp_x.pop(0)
 
-        for j in range (i,len(list_recv[k])):
-            if len(tmp_x)==N:
-                batchs.put([tmp_x+[list_recv[k].iloc[j, 0]],tmp_y+[int(list_recv[k].iloc[j, -1])]], block=True)
-                tmp_x.pop(0)
-
-            if len(tmp_x)<N:
-                if list_recv[k].iloc[j,-1]==0:
-                    tmp_x.append(list_recv[k].iloc[j, 0])
+                if len(tmp_x)<N:
+                    if list_recv[k].iloc[j,-1]==0:
+                        tmp_x.append(int(list_recv[k].iloc[j, 0]))
 
 
 class BatchCreater(Thread):
@@ -89,7 +86,8 @@ class BatchCreater(Thread):
         fini = False
         if EXEMPLE :
             N=100
-            create_batch(1)
+            for i in range(1,2):
+                create_batch(i)
         else :
             index = [i for i in range(len(list_recv))]
             shuffle(index)
@@ -107,40 +105,33 @@ class BatchWriter(Thread):
         global fini
         compteur={0:0, 1:0, 2:0, 4:0, 8:0, 16:0}
         tx = open("test_x", "w")
-        ty = open("test_y", "w")
         vx = open("validation_x", "w")
-        vy = open("validation_y", "w")
         while not fini or not batchs.empty():
             with verrou:
                 if batchs.empty():
                     continue
                 else:
                     batch_x, batch_y = batchs.get(block=True)
-            if (compteur[batch_y[-1]]!=0):
+            if (compteur[batch_y]%5!=0):
                 for i in range(len(batch_x)):
                     tx.write(str(batch_x[i])+" ")
-                    ty.write(str(batch_y[i])+" ")
-
                 tx.write("\n")
-                ty.write("\n")
 
             else:
                 for i in range(len(batch_x)):
                     vx.write(str(batch_x[i])+" ")
-                    vy.write(str(batch_y[i])+" ")
 
                 vx.write("\n")
-                vy.write("\n")
 
-            compteur[batch_y[-1]] = (compteur[batch_y[-1]]+1)%5
+
+            compteur[batch_y] += 1
 
             time.sleep(0)
 
 
         tx.close()
-        ty.close()
         vx.close()
-        vy.close()
+        print(compteur)
 
 creater = BatchCreater()
 writer = BatchWriter()

@@ -29,32 +29,28 @@ def file_len(f):
 
 def visit_line(line):
     l=line[:-2].split(" ")
-    res = database.iloc[int(float(l[0])),:-1].to_numpy()
+
+    res = database[int(l[0])]
     for i in range(1,len(l)):
-        res = np.vstack((res,database.iloc[int(float(l[i])), :-1]))
+        res = np.vstack((res,database[int(l[i])]))
 
-    return res,(np.hstack((np.zeros(len(res)-1,dtype=int),int(database.iloc[int(float(l[-1])),-1]))))
+    return res,(np.hstack((np.zeros(len(res)-1,dtype=int),int(database[int(l[-1]),-1]))))
 
-
-def get_line(f, index):
-    for i, line in enumerate(f):
-        if i == index:
-            f.seek(0,0)
-            return visit_line(line)
-
+compteur={0:0, 1:0, 2:0, 4:0, 8:0, 16:0}
 def fit(tmp):
     a,b=tmp
-    print(a.shape,b[-1])
+    compteur[b[-1]]+=1
 
 
 def entrainement(file_name):
 
     f = open(file_name)
-    l=[i for i in range(file_len(f))]
-    random.shuffle(l)
-    for line in l:
-        tmp = get_line(f, line)
-        fit(tmp)
+    l=[line for _,line in enumerate(f)]
     f.close()
+    #random.shuffle(l)
+    for line in l:
+        tmp = visit_line(line)
+        fit(tmp)
 
-entrainement('sets/test_x')
+entrainement('test_x')
+print(compteur)

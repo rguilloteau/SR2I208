@@ -15,7 +15,9 @@ for el in L :
 
 database = pd.concat(frames)
 
-database.sort_values(['BSM'])
+database.iloc[[i for i in range(len(database))],0]= [i for i in range(len(database))]
+
+database=database.sort_values(['BSM'])
 database=database.dropna()
 list_recv = [database[database['Identifiant du destinataire'] == x] for x in database['Identifiant du destinataire'].unique()]
 
@@ -33,11 +35,11 @@ def create_batch(k):
 
         for i in range(len(list_recv[k])-1):
             if list_recv[k].iloc[i,-1]==0:
-                tmp_x.append(list_recv[k].iloc[i,1:-1])
+                tmp_x.append(list_recv[k].iloc[i,0])
                 tmp_y.append(0.0)
 
         tmp_y.append(list_recv[k].iloc[-1,-1])
-        tmp_x.append(list_recv[k].iloc[-1, 1:-1])
+        tmp_x.append(list_recv[k].iloc[-1, 0])
 
         return [tmp_x], [tmp_y]
 
@@ -54,25 +56,25 @@ def create_batch(k):
 
 
             if list_recv[k].iloc[i,-1]==0:
-                tmp_x.append(list_recv[k].iloc[i,1:-1])
+                tmp_x.append(list_recv[k].iloc[i,0])
                 tmp_y.append(0.0)
                 compteur+=1
             i+=1
 
 
         if i==len(list_recv[k])-1:
-            return ([tmp_x+[list_recv[k].iloc[i, 1:-1]]]),([tmp_y+[list_recv[k].iloc[i, -1]]])
+            return ([tmp_x+[list_recv[k].iloc[i, 0]]]),([tmp_y+[list_recv[k].iloc[i, -1]]])
 
 
         for j in range (i,len(list_recv[k])):
             if len(tmp_x)==N:
-                batches_x.append((tmp_x+[list_recv[k].iloc[j, 1:-1]]))
+                batches_x.append((tmp_x+[list_recv[k].iloc[j, 0]]))
                 batches_y.append((tmp_y+[list_recv[k].iloc[j, -1]]))
                 tmp_x.pop(0)
 
             if len(tmp_x)<N:
                 if list_recv[k].iloc[j,-1]==0:
-                    tmp_x.append(list_recv[k].iloc[j, 1:-1])
+                    tmp_x.append(list_recv[k].iloc[j, 0])
 
         return batches_x, batches_y
 
@@ -100,11 +102,9 @@ shuffle(index)
 
 for i in index:
     for j in range(len(batches_x[i])):
-        tmp = batches_x[i][j].to_numpy()
-        for k in range(2,len(tmp)-1):
-            fx.write(str(tmp[k])+" ")
-        fx.write("\n")
-        fy.write(str(batches_y[i][j])+"\n")
+        tmp = batches_x[i][j]
+        fx.write(str(tmp)+" ")
+        fy.write(str(batches_y[i][j])+" ")
     fx.write("\n")
     fy.write("\n")
 
