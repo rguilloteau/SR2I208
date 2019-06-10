@@ -52,5 +52,6 @@ def entrainement(file_name):
         tmp = visit_line(line)
         fit(tmp)
 
-entrainement('test_x')
+entrainement('sets/test_x')
+entrainement('sets/validation_x')
 print(compteur)

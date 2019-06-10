@@ -114,12 +114,12 @@ class BatchWriter(Thread):
                     batch_x, batch_y = batchs.get(block=True)
             if (compteur[batch_y]%5!=0):
                 for i in range(len(batch_x)):
-                    tx.write(str(batch_x[i])+" ")
+                    tx.write(str(int(batch_x[i]))+" ")
                 tx.write("\n")
 
             else:
                 for i in range(len(batch_x)):
-                    vx.write(str(batch_x[i])+" ")
+                    vx.write(str(int(batch_x[i]))+" ")
 
                 vx.write("\n")
 
